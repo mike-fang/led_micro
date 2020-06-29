@@ -8,11 +8,9 @@ def show_rgb_comp(ms_img):
         plt.imshow(img)
         plt.xticks([])
         plt.yticks([])
-    plt.show()
 def show_chan_comp(ms_img):
     for n in range(24):
         plt.subplot(4, 6, n+1)
         plt.imshow(ms_img[:, :, n], cmap='Greys_r')
         plt.xticks([])
         plt.yticks([])
-    plt.show()

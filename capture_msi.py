@@ -21,9 +21,7 @@ def init_rb():
 
     return rb
 
-
-def capture_ms_img(cam, n_leds=8, pause=0, vc_channel=1):
-    rb = init_rb()
+def capture_ms_img(cam, rb, n_leds=8, pause=0, vc_channel=1):
     H, W, n_channels = cam.img_shape
     ms_img = np.zeros((H, W, n_channels*n_leds))
     for n in range(n_leds):

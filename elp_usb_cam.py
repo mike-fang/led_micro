@@ -13,6 +13,7 @@ class ELP_Camera():
                 break
         cam.release()
         cv2.destroyAllWindows()
+        assert False
     def capture_img(self):
         ret, frame = self.cap.read()
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
