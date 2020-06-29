@@ -21,38 +21,28 @@ def init_rb():
 
     return rb
 
-def camera_test(cam):
-    cam.set(cv2.CAP_PROP_GAIN, -8)
-    while True:
-        ret, frame = cam.read()
-        cv2.imshow('', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-    cam.release()
-    cv2.destroyAllWindows()
 
-def capture_ms_img(n_leds, pause, vc_channel=1):
+def capture_ms_img(cam, n_leds=8, pause=0, vc_channel=1):
     rb = init_rb()
-    cam = cv2.VideoCapture(vc_channel)
-
-    ret, frame = cam.read()
-    H, W, n_channels = frame.shape
+    H, W, n_channels = cam.img_shape
     ms_img = np.zeros((H, W, n_channels*n_leds))
     for n in range(n_leds):
         state = np.zeros(n_leds)
         state[n] = 1
         rb.set_state(state)
-        ret, frame = cam.read()
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        ms_img[:, :, n*n_channels:(n+1)*n_channels] = frame
         sleep(pause)
+        ms_img[:, :, n*n_channels:(n+1)*n_channels] = cam.capture_img()
     rb.set_state(np.zeros(n_leds))
     return ms_img
 
 if __name__ == '__main__':
     cam = cv2.VideoCapture(1)
-    cam.set(cv2.CAP_PROP_GAIN, -8)
-    camera_test(cam)
+    _, _ = cam.read()
+    cam.set(cv2.CAP_PROP_SETTINGS, 1)
+    cam.set(cv2.CAP_PROP_GAIN, 1)
+    print(cam.get(cv2.CAP_PROP_GAIN))
+        
+
     assert False
     ms_img = capture_ms_img(n_leds=8, pause=.0)
 
