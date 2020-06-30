@@ -11,7 +11,7 @@ from msi_proc import *
 def start_time_lapse(dt, tmax, out_path, save_thumbnail=False):
     if not os.path.isdir(out_path):
         os.makedirs(out_path)
-    cam = ELP_Camera(1)
+    cam = ELP_Camera(0)
     t0 = time.time()
     rb = init_rb()
     while time.time() - t0 < tmax:
