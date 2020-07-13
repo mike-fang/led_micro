@@ -6,6 +6,13 @@ img = cv2.imread('./pumpkin.jpg')
 img = img[:, :, [2, 1, 0]]
 img = cv2.resize(img, (640, 480))
 
+def grad_sharp(img):
+    if len(img.shape) == 3:
+        img = img.mean(axis=2)
+    gy, gx = np.gradient(img)
+    gnorm = np.sqrt(gx**2 + gy**2)
+    sharpness = np.average(gnorm)
+    return sharpness
 def get_power(img):
     # Convert to greyscale
     if len(img.shape) == 3:
@@ -21,8 +28,11 @@ def get_power(img):
     polar_power = cv2.linearPolar(log_power,(W/2, H/2), R, cv2.WARP_FILL_OUTLIERS)
     rad_power = polar_power.mean(axis=0)
     return rad_power
-def get_mean_log_power(img, exp=0):
+def get_mean_log_power(img, exp=1, frac=1):
     power = get_power(img)
+    start_freq = int((1-frac)*len(power))
+    print(start_freq)
+    power = power[start_freq:] 
     freqs = np.arange(len(power))
     return ((freqs**exp * power).mean() / (freqs**exp).mean())
 

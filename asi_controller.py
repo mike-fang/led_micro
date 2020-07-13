@@ -16,7 +16,9 @@ class AsiController:
     Functions for Z-axis control are defined, but it is not initialized. If it is desired to be used, then a homing
     procedure needs to be defined in initialize().
     """
-    def __init__(self, config_file='./asi_config.yml', init_xy=False):
+    def __init__(self, config_file='./asi_config.yml', init_xy=False, debug=False, pause=0.2):
+        self.pause = pause
+        self.debug = debug
         self.serial = s.Serial()  # placehoder
         
         f = open(config_file, 'r')
@@ -39,10 +41,12 @@ class AsiController:
         """
         full_string = self.config['prefix'] + cmd_string + self.config['terminator']
         self.serial.write(full_string.encode())
-        time.sleep(0.05)
+        time.sleep(self.pause)
 
         response = self.serial.read(self.serial.inWaiting()).decode()
-        #print(response)
+        if self.debug:
+            print('Command: ', full_string.encode())
+            print('Response: ', response)
         return response
     def halt(self):
             """
@@ -75,7 +79,7 @@ class AsiController:
             response = self.cmd(full_string)
             
             while block and self.is_busy_xy():
-                time.sleep(0.05)
+                time.sleep(self.pause)
                 pass
              
             return response
@@ -138,8 +142,8 @@ class AsiController:
             """
             Moves XY-axes absolutely to the specified position.
 
-            :param x_um: (float) desired absolute X position [mm]
-            :param y_um: (float) desired absolute Y position [mm]
+            :param x_um: (float) desired absolute X position [um]
+            :param y_um: (float) desired absolute Y position [um]
             :return: (str) device response
             """
             conv = self.config['conv']
@@ -206,7 +210,7 @@ class AsiController:
             response = self.cmd_z('WHERE Z')
             if response.find('A'):
                 pos_z = float(response.split()[1])
-                return pos_z
+                return pos_z / self.config['conv']
             else:
                 return None    
     def goto_z(self, z_um):
@@ -217,13 +221,17 @@ class AsiController:
             :return: (str) device response
             """
             conv = self.config['conv']
-            z_str = 'z=' + str(float(z_um) * conv)
-            return self.cmd_z(' '.join(['m', z_str]))
+            cmd = f'm z={z_um*conv:.4f}'
+            print(cmd)
+            return self.cmd_z(cmd)
     def move_relative_z(self, dz):
+        dz *= self.config['conv']
         return self.cmd_z(f'r z={dz}')
 
 if __name__ == '__main__':
     control = AsiController(config_file='./asi_config.yml', init_xy=False)
-    pint(control.where_z())
-    control.cmd('r z=-1')
+    z = (control.where_z())
+    print(z)
+    control.goto_z(z+1)
+    time.sleep(1)
     print(control.where_z())
