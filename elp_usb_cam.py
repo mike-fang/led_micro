@@ -46,8 +46,8 @@ class ELP_Camera():
                 show_frame()
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
-        state = np.zeros(8)
-        rb.set_state(state)
+        #state = np.zeros(8)
+        #rb.set_state(state)
         self.cap.release()
         cv2.destroyAllWindows()
         assert False
