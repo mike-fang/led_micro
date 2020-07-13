@@ -23,7 +23,6 @@ class ELP_Camera():
         def show_frame():
             _, frame = self.cap.read()
             cv2.imshow('', frame)
-            print('Exposure is now', self.cap.get(cv2.CAP_PROP_EXPOSURE))
             if callback is not None:
                 callback(frame)
         rb = init_rb()
@@ -46,8 +45,8 @@ class ELP_Camera():
                 show_frame()
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
-        #state = np.zeros(8)
-        #rb.set_state(state)
+        state = np.zeros(8)
+        rb.set_state(state)
         self.cap.release()
         cv2.destroyAllWindows()
         assert False
