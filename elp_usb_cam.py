@@ -22,6 +22,7 @@ class ELP_Camera():
 
         def show_frame():
             _, frame = self.cap.read()
+            print(frame.mean())
             cv2.imshow('', frame)
             if callback is not None:
                 callback(frame)
@@ -57,6 +58,7 @@ class ELP_Camera():
 
 if __name__ == '__main__':
     from get_sharpness import get_mean_log_power, grad_sharp
+    from led_controller import LED_Controller, init_rb, Stepper
     def print_sharp(img):
         #print(get_mean_log_power(img, exp=3))
         #print(grad_sharp(img))
@@ -64,4 +66,12 @@ if __name__ == '__main__':
     cam = ELP_Camera(0)
     cam.set_exp(300)
     cam.set_auto_exp(False)
-    cam.camera_test(8, callback=print_sharp)
+    rb = init_rb()
+    stepper = Stepper(pulse_time=0.0005)
+    led_control = LED_Controller(rb, stepper)
+    led_control.switch_on(4)
+    while True:
+        frame = cam.capture_img()
+        cv2.imshow('', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break

@@ -3,14 +3,13 @@ from ft245r.relay_ft245r import FT245R
 import sys
 from time import sleep
 import numpy as np
+from stepper_control import Stepper
 from elp_usb_cam import ELP_Camera
 import matplotlib.pylab as plt
 from msi_proc import *
 import cv2
 import os
 from led_controller import LED_Controller
-
-STD_EXPOSURE = [785.9421900000001, 372.15457592564917, 646.1745714810587, 2593.742460100001, 109.41898913151245, 1948.7171000000005, 1578.460851000001, 122.16860794583101]
 
 def init_rb():
     rb = FT245R()
@@ -26,13 +25,12 @@ def init_rb():
 
     return rb
 
-def capture_ms_img(cam, rb, exposures=None, n_leds=8, pause=0):
+def capture_ms_img(cam, rb, stepper, exposures=None, n_leds=8, pause=0):
+    led_control = LED_Controller(rb, stepper)
     H, W, n_channels = cam.img_shape
-    ms_img = np.zeros((H, W, n_channels*n_leds))
+    ms_img = np.zeros((H, W, n_channels*n_leds), dtype=np.uint8)
     for n in range(n_leds):
-        state = np.zeros(n_leds)
-        state[n] = 1
-        rb.set_state(state)
+        led_control.switch_on(n)
         if exposures is not None:
             try:
                 cam.set_exp(exposures[n])
@@ -43,7 +41,7 @@ def capture_ms_img(cam, rb, exposures=None, n_leds=8, pause=0):
             img = cam.capture_img()
         print(img.mean())
         ms_img[:, :, n*n_channels:(n+1)*n_channels] = img
-    rb.set_state(np.zeros(n_leds))
+    rb.set_state(np.zeros(8))
     return ms_img
 
 def get_exposures(cam, rb, n_leds=8, pause=.5, target=128, tol=10, n_iter=20):
@@ -83,8 +81,11 @@ def get_exposures(cam, rb, n_leds=8, pause=.5, target=128, tol=10, n_iter=20):
 if __name__ == '__main__':
     cam = ELP_Camera(0)
     rb = init_rb()
-    exposures = get_exposures(cam, rb, n_leds=8, pause=.5, target=75,tol=5)
-    np.save('./exposures.npy', exposures)
-    ms_img = capture_ms_img(cam, rb, exposures=exposures, pause=.5)
+    #exposures = get_exposures(cam, rb, n_leds=5, pause=.5, target=75,tol=5)
+    #np.save('./exposures.npy', exposures)
+    #stepper = Stepper(pulse_time=0.00010)
+    stepper = Stepper(pulse_time=0.00050)
+    ms_img = capture_ms_img(cam, rb, stepper, n_leds=5, exposures=None, pause=.5)
+    print(ms_img)
     show_rgb_comp(ms_img)
     plt.show()  

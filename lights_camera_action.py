@@ -1,4 +1,20 @@
-from elp_usb_cam import ELP_Camera
+from elp_usb_cam import *
+from get_sharpness import get_mean_log_power, grad_sharp
+from led_controller import LED_Controller, init_rb, Stepper
+def print_sharp(img):
+    #print(get_mean_log_power(img, exp=3))
+    #print(grad_sharp(img))
+    return
 cam = ELP_Camera(0)
-cam.camera_test(8)
-
+cam.set_exp(300)
+cam.set_auto_exp(False)
+rb = init_rb()
+stepper = Stepper(pulse_time=0.0005)
+led_control = LED_Controller(rb, stepper)
+led_control.switch_on(4)
+while True:
+    frame = cam.capture_img()
+    cv2.imshow('', frame)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+led_control.all_off()
