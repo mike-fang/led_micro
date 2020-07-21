@@ -19,6 +19,7 @@ def init_rb():
     return rb
 
 class LED_Controller:
+    #rbgow
     led_chs = [6, 2, 1, 7, 5]
     led_pos = [8240, 15590, 22190, 31390, 36500]
     def __init__(self, rb, stepper):
@@ -42,9 +43,6 @@ if __name__ == '__main__':
     from time import sleep
      
     rb = init_rb()
-    stepper = Stepper(pulse_time=0.00005)
-    led_control = LED_Controller(rb, stepper)
-    for n in range(5):
-        led_control.switch_on(n)
-        sleep(1)
-    led_control.all_off()
+    stepper = Stepper(pulse_time=0.0005)
+    ctrl = LED_Controller(rb, stepper)
+    ctrl.switch_on(0)

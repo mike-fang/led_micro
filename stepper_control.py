@@ -62,11 +62,9 @@ def cleanup():
     GPIO.output(15, 0)
 
 if __name__ == '__main__':
-    #7, 17, 27, 35, 44
-    #7, 10, 10, 9, 9
     try:
         stepper = Stepper(pulse_time=0.00050)
-        stepper.pulse_steps(100, 'l')
+        #stepper.pulse_steps(400, 'l')
         stepper.zero_pos()
     except Exception as e:
         print(e)

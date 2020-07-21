@@ -69,7 +69,7 @@ if __name__ == '__main__':
     rb = init_rb()
     stepper = Stepper(pulse_time=0.0005)
     led_control = LED_Controller(rb, stepper)
-    led_control.switch_on(4)
+    led_control.switch_on(1)
     while True:
         frame = cam.capture_img()
         cv2.imshow('', frame)
