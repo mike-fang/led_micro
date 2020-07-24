@@ -5,6 +5,7 @@ from capture_msi import init_rb
 from capture_msi import capture_ms_img as relay_capture
 from capture_msi_stepper import capture_ms_img as stepper_capture
 from stepper_control import Stepper
+from spin_spin import Stepper as SpinSpin
 import os, time
 from elp_usb_cam import ELP_Camera
 import matplotlib.pylab as plt
@@ -33,6 +34,9 @@ def start_time_lapse(dt, tmax, out_path, capt='stepper', exposures=None, save_th
             show_rgb_comp(ms_img)
             plt.savefig(os.path.join(out_path, f'{time_stamp}_tn.png'))
             cv2.imwrite(os.path.join(out_path, f'{time_stamp}_white.png'), ms_img[:, :, -1])
+            plt.clear()
+            plt.clf()
+            plt.cla()
         end_time = time.time()
         time_elapsed = end_time - start_time
         sleep_time = dt - time_elapsed

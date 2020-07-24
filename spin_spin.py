@@ -1,21 +1,25 @@
 import RPi.GPIO as GPIO
 import time
 import argparse
+import json
 
 class Stepper:
-    def __init__(self, pins=[11, 13, 15], pulse_time=0.005, PPR=800, pitch_mm=1):
+    def __init__(self, config_file, pulse_time=0.005):
+        self.load_config(config_file)
         GPIO.cleanup()
-        self.PUL, self.DIR, self.ENA = pins
         self.pulse_time=pulse_time
-        self.PPR = PPR
-        self.pitch_mm = pitch_mm
-        
         GPIO.setmode(GPIO.BOARD)
-        for _ in range(1):
-            for pin in pins:
-                GPIO.setup(pin, GPIO.OUT)
-                #GPIO.output(pin, 0)
+        for pin in self.pins:
+            GPIO.setup(pin, GPIO.OUT)
+            #GPIO.output(pin, 0)
         self.sum_steps = 0
+    def load_config(self, cf):
+        self.config_file = cf
+        with open(cf, 'r') as f:
+            self.config = json.load(f)
+        self.pins = self.config['pins']
+        self.PPR = self.config['PPR']
+        self.PUL, self.DIR, self.ENA = self.pins
     def pulse_steps(self, n_steps, direction='l'):
         if direction in ['r', 'R', 'right']:
             direction = 0
@@ -33,21 +37,35 @@ class Stepper:
             time.sleep(self.pulse_time)
         # accum steps
         pm = -1 if direction == 1 else +1
-        curr_pos = self.read_pos() + pm * n_steps
-        with open('./stepper_pos', 'w') as f:
-            f.write(str(curr_pos))
+        curr_pos = (self.read_pos() + pm * n_steps) % self.PPR
+        self.set_pos(curr_pos)
         self.reset()
     def zero_pos(self):
         with open('./stepper_pos', 'w') as f:
             f.write(str(0.))
+    def set_pos(self, x):
+        with open(self.config_file, 'r') as f:
+            self.config = json.load(f)
+        self.config['pos'] = x
+        with open(self.config_file, 'w') as f:
+            json.dump(self.config, f)
     def read_pos(self):
-        with open('./stepper_pos', 'r') as f:
-            pos = float(f.read())
-        return pos
+        return self.config['pos']
     def goto(self, x):
-        dx = x - self.read_pos()
+        dx = (x - self.read_pos()) % self.PPR
+        if dx > self.PPR/2:
+            dx -= self.PPR
         dir_ = 'l' if dx < 0 else 'r'
         self.pulse_steps(int(abs(dx)), dir_) 
+    def goto_filter(self, f):
+        if isinstance(f, int):
+            positions = []
+            for k, p in self.config['filters'].items():
+                positions.append(p)
+            pos = positions[f]
+        else:
+            pos = self.config['filters'][f]
+        self.goto(pos)
     def move(self, x, units='mm'):
         assert units in ['mm', 'um']
         if units == 'mm':
@@ -56,11 +74,7 @@ class Stepper:
         direction = 'r' if x > 0 else 'l'
         self.pulse_steps(steps, direction=direction)
     def reset(self):
-        GPIO.output(15, 0)
-    
-
-def cleanup():
-    GPIO.output(15, 0)
+        GPIO.output(self.ENA, 0)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -69,12 +83,10 @@ if __name__ == '__main__':
     parser.add_argument('-g', help='Goto G')
     parser.add_argument('-w', help='Where', action='store_true')
     args = parser.parse_args()
-    print(args)
-
     try:
-        stepper = Stepper(pulse_time=0.005)
+        stepper = Stepper(config_file='spinspin_config.json', pulse_time=0.0005)
         if args.w:
-            print(stepper.read_pos())
+            print(f'Welcome to {stepper.read_pos()}, please take a seat and have some covfefe')
         if args.l:
             dir_ = 'l'
             steps = int(args.l)

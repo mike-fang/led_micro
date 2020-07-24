@@ -64,31 +64,23 @@ def cleanup():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l', help='Move left L steps')
-    parser.add_argument('-r', help='Move right R steps')
-    parser.add_argument('-g', help='Goto G')
-    parser.add_argument('-w', help='Where', action='store_true')
+    parser.add_argument('dx', nargs=1, default='0', help='Steps to shift by')
+    parser.add_argument('-l', help='Move left', action='store_true')
+    parser.add_argument('-r', help='Move right', action='store_true')
     args = parser.parse_args()
-    print(args)
+
+    steps = int(args.dx)
+    if args.l:
+        dir_ = 'l'
+    elif args.r:
+        dir_ = 'r'
+    else:
+        raise Exception('Need direction, "-r" or "-l"')
 
     try:
         stepper = Stepper(pulse_time=0.005)
-        if args.w:
-            print(stepper.read_pos())
-        if args.l:
-            dir_ = 'l'
-            steps = int(args.l)
-            stepper.pulse_steps(steps, dir_)
-            if args.r or args.g:
-                raise Exception('left or right or goto? make up your mind yo!')
-        elif args.r:
-            dir_ = 'r'
-            steps = int(args.r)
-            stepper.pulse_steps(steps, dir_)
-            if args.l or args.g:
-                raise Exception('left or right or goto? make up your mind yo!')
-        elif args.g:
-            stepper.goto(int(args.g))
+        #stepper.pulse_steps(steps, dir_)
+        stepper.zero_pos()
     except Exception as e:
         print(e)
         stepper.reset()
