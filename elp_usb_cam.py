@@ -1,5 +1,6 @@
 import cv2
 import matplotlib.pylab as plt
+import subprocess
 
 class ELP_Camera():
     def __init__(self, cv_chan, auto_exp=False):
@@ -7,14 +8,37 @@ class ELP_Camera():
         img = self.capture_img()
         self.img_shape = img.shape
         self.set_auto_exp(auto_exp)
+        self.set_auto_wb(False)
+        self.set_exp(75)
+        self.set_wb(2000)
     def set_auto_exp(self, val):
         if val:
-            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3)
+            val = 3
         else:
-            self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+            val = 1
+        subprocess.call(["uvcdynctrl", "-s", "Exposure, Auto", str(val)])
     def set_exp(self, exp):
-        self.cap.set(cv2.CAP_PROP_EXPOSURE, exp)
-        print('Exposure is now', self.cap.get(cv2.CAP_PROP_EXPOSURE))
+        subprocess.call(["uvcdynctrl", "-s", "Exposure (Absolute)", str(exp)])
+    def set_auto_wb(self, v):
+        if v:
+            v = 1
+        else:
+            v = 0
+        subprocess.call(["uvcdynctrl", "-s", "White Balance Temperature, Auto", str(v)])
+    def set(self, prop, val):
+        subprocess.call(["uvcdynctrl", "-s",str(prop), str(val)])
+        subprocess.call(["uvcdynctrl", "-g",str(prop)])
+    def get(self, prop):
+        subprocess.call(["uvcdynctrl", "-g",str(prop)])
+    def set_auto_wb(self, v):
+        if v:
+            v = 1
+        else:
+            v = 0
+        subprocess.call(["uvcdynctrl", "-s", "White Balance Temperature, Auto", str(v)])
+    def set_wb(self, v):
+        subprocess.call(["uvcdynctrl", "-s", "White Balance Temperature", str(v)])
+        subprocess.call(["uvcdynctrl", "-g", "White Balance Temperature"])
     def camera_test(self, ch='all', callback=None):
         from capture_msi import init_rb, STD_EXPOSURE
         import numpy as np

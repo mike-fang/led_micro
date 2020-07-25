@@ -4,6 +4,7 @@ from datetime import datetime
 from capture_msi import init_rb
 from capture_msi import capture_ms_img as relay_capture
 from capture_msi_stepper import capture_ms_img as stepper_capture
+from capture_msi_spin import capture_ms_img as spin_capture
 from stepper_control import Stepper
 from spin_spin import Stepper as SpinSpin
 import os, time
@@ -21,22 +22,29 @@ def start_time_lapse(dt, tmax, out_path, capt='stepper', exposures=None, save_th
     rb = init_rb()
     if capt == 'stepper':
         stepper = Stepper(pulse_time=0.00050)
+    if capt == 'spinspin':
+        stepper = SpinSpin(config_file='spinspin_config.json', pulse_time=0.0005)
     while time.time() - t0 < tmax:
         start_time = time.time()
         if capt == 'stepper':
-            ms_img = stepper_capture(cam, rb, stepper, n_leds=5, exposures=exposures)
+            n_leds = 5
+            ms_img = stepper_capture(cam, rb, stepper, n_leds=n_leds, exposures=exposures)
+        if capt == 'spinspin':
+            n_leds = 4
+            ms_img = spin_capture(cam, rb, stepper, n_leds=n_leds, exposures=exposures, pause=1)
         elif capt == 'relay':
+            n_leds = 8
             ms_img = relay_capture(cam, rb, n_leds=8, exposures=exposures)
         time_stamp = f'{time.time():.2f}'.replace('.', '_')
         np.save(os.path.join(out_path, f'{time_stamp}.npy'), ms_img)
         if save_thumbnail:
             plt.figure()
-            show_rgb_comp(ms_img)
+            show_rgb_comp(ms_img, n_leds=n_leds)
             plt.savefig(os.path.join(out_path, f'{time_stamp}_tn.png'))
             cv2.imwrite(os.path.join(out_path, f'{time_stamp}_white.png'), ms_img[:, :, -1])
-            plt.clear()
-            plt.clf()
             plt.cla()
+            plt.clf()
+            plt.close()
         end_time = time.time()
         time_elapsed = end_time - start_time
         sleep_time = dt - time_elapsed
@@ -53,6 +61,8 @@ if __name__ == '__main__':
     parser.add_argument('--dt', help='Time before each capture in minutes')
     parser.add_argument('--tmax', help='Duration of time-lapse in minutes')
     parser.add_argument('--stepper', help='Using stepper motor', action='store_true')
+    parser.add_argument('--ctrl', help='Controller ("relay", "stepper", or "spinspin")')
+    parser.add_argument('--spinspin', help='Using spin spin motor', action='store_true')
 
     args = parser.parse_args()
 
@@ -61,7 +71,9 @@ if __name__ == '__main__':
 
     dt = float(args.dt) * 60
     tmax = float(args.tmax) * 60
-    capt = 'stepper' if args.stepper else 'relay'
+    if not args.ctrl in ['relay', 'stepper', 'spinspin']:
+        raise Exception('Controller needs to be "relay", "stepper" or "spinspin", yo!')
+    capt = args.ctrl
     #exposures = np.load('./exposures.npy')
     exposures = None
     print('Starting time-lapse capture...')

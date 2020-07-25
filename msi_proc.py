@@ -3,20 +3,21 @@ import numpy as np
 from scipy.signal import fftconvolve
 from sklearn.decomposition import PCA
 
-def show_rgb_comp(ms_img):
-    for n in range(5):
-        plt.subplot(1, 5, n+1)
+def show_rgb_comp(ms_img, n_leds=5):
+    for n in range(n_leds):
+        plt.subplot(1, n_leds, n+1)
         img = ms_img[:, :, n*3:(n+1)*3].astype(np.uint8)
         plt.imshow(img)
         plt.xticks([])
         plt.yticks([])
-def show_rgb_comp(ms_img):
-    for n in range(5):
-        plt.subplot(2, 4, n+1)
-        img = ms_img[:, :, n*3:(n+1)*3].astype(np.uint8)
-        plt.imshow(img)
-        plt.xticks([])
-        plt.yticks([])
+if False:
+    def show_rgb_comp(ms_img):
+        for n in range(5):
+            plt.subplot(2, 4, n+1)
+            img = ms_img[:, :, n*3:(n+1)*3].astype(np.uint8)
+            plt.imshow(img)
+            plt.xticks([])
+            plt.yticks([])
 def show_chan_comp(ms_img):
     plt.figure(figsize=(6, 7))
     for n in range(24):

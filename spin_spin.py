@@ -101,6 +101,8 @@ if __name__ == '__main__':
                 raise Exception('left or right or goto? make up your mind yo!')
         elif args.g:
             stepper.goto(int(args.g))
+        else:
+            stepper.goto_filter(3)
     except Exception as e:
         print(e)
         stepper.reset()

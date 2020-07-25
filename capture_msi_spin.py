@@ -29,8 +29,12 @@ def capture_ms_img(cam, rb, stepper, exposures=None, n_leds=8, pause=0):
     led_control = LED_Controller(rb, stepper)
     H, W, n_channels = cam.img_shape
     ms_img = np.zeros((H, W, n_channels*n_leds), dtype=np.uint8)
+    cam.set_auto_wb(False)
     for n in range(n_leds):
-        led_control.switch_on(n)
+        state = np.zeros(8)
+        state[4] = 1    
+        rb.set_state(state)
+        stepper.goto_filter(n)
         if exposures is not None:
             try:
                 cam.set_exp(exposures[n])
@@ -83,9 +87,9 @@ if __name__ == '__main__':
     rb = init_rb()
     #exposures = get_exposures(cam, rb, n_leds=5, pause=.5, target=75,tol=5)
     #np.save('./exposures.npy', exposures)
-    #stepper = Stepper(pulse_time=0.00010)
-    stepper = Stepper(pulse_time=0.00050)
-    ms_img = capture_ms_img(cam, rb, stepper, n_leds=5, exposures=None, pause=.5)
-    print(ms_img)
-    show_rgb_comp(ms_img)
+    stepper = Stepper(config_file='spinspin_config.json', pulse_time=0.0005)
+    ms_img = capture_ms_img(cam, rb, stepper, n_leds=4, exposures=None, pause=.5)
+    for n in range(4):
+        plt.figure(figsize=(10, 6))
+        plt.imshow(ms_img[:, :, n*3:(n+1)*3])
     plt.show()  
