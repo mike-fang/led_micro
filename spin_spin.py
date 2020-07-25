@@ -28,9 +28,9 @@ class Stepper:
         if n_steps < 0:
             direction = 0
             n_steps = -n_steps
+        GPIO.output(self.ENA, 1)
+        GPIO.output(self.DIR, direction)
         for _ in range(n_steps):
-            GPIO.output(self.DIR, direction)
-            GPIO.output(self.ENA, 1)
             GPIO.output(self.PUL, 1)
             time.sleep(self.pulse_time)
             GPIO.output(self.PUL, 0)
@@ -39,7 +39,7 @@ class Stepper:
         pm = -1 if direction == 1 else +1
         curr_pos = (self.read_pos() + pm * n_steps) % self.PPR
         self.set_pos(curr_pos)
-        self.reset()
+        self.disengage()
     def zero_pos(self):
         with open('./stepper_pos', 'w') as f:
             f.write(str(0.))
@@ -73,18 +73,21 @@ class Stepper:
         steps = abs(int(x/1.25))
         direction = 'r' if x > 0 else 'l'
         self.pulse_steps(steps, direction=direction)
-    def reset(self):
+    def disengage(self):
+        time.sleep(.2)
         GPIO.output(self.ENA, 0)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-l', help='Move left L steps')
     parser.add_argument('-r', help='Move right R steps')
-    parser.add_argument('-g', help='Goto G')
+    parser.add_argument('-g', help='Go to step position G')
+    parser.add_argument('-n', help='Go to filter number N')
     parser.add_argument('-w', help='Where', action='store_true')
+    parser.add_argument('-t', help='Pulse Time', default='0.0005')
     args = parser.parse_args()
     try:
-        stepper = Stepper(config_file='spinspin_config.json', pulse_time=0.0005)
+        stepper = Stepper(config_file='spinspin_config.json', pulse_time=float(args.t))
         if args.w:
             print(f'Welcome to {stepper.read_pos()}, please take a seat and have some covfefe')
         if args.l:
@@ -102,9 +105,10 @@ if __name__ == '__main__':
         elif args.g:
             stepper.goto(int(args.g))
         else:
-            stepper.goto_filter(3)
+            for c in stepper.config['filters']:
+                stepper.goto_filter(c)
     except Exception as e:
         print(e)
-        stepper.reset()
+        stepper.disengage()
     else:
-        stepper.reset()
+        stepper.disengage()

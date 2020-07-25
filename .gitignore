@@ -95,3 +95,4 @@ celerybeat-schedule
 .mypy_cache/
 
 /results
+/analyses
