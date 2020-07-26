@@ -107,8 +107,8 @@ if __name__ == '__main__':
             stepper.goto(int(args.g))
         else:
             for _ in range(20):
-                stepper.pulse_steps(200, 'l', disengage=False)
-                stepper.pulse_steps(200, 'r', disengage=False)
+                stepper.pulse_steps(200, 'l', disengage=True)
+                stepper.pulse_steps(200, 'r', disengage=True)
     except Exception as e:
         print(e)
         stepper.disengage()
