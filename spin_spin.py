@@ -11,8 +11,9 @@ class Stepper:
         GPIO.setmode(GPIO.BOARD)
         for pin in self.pins:
             GPIO.setup(pin, GPIO.OUT)
-            #GPIO.output(pin, 0)
+            GPIO.output(pin, 0)
         self.sum_steps = 0
+        self.curr_dir = 0
     def load_config(self, cf):
         self.config_file = cf
         with open(cf, 'r') as f:
@@ -20,20 +21,27 @@ class Stepper:
         self.pins = self.config['pins']
         self.PPR = self.config['PPR']
         self.PUL, self.DIR, self.ENA = self.pins
+    def set_dir(self, direction):
+        if not self.curr_dir == direction:
+            self.pulse()
+            self.pulse()
+        GPIO.output(self.DIR, direction)
+        self.curr_dir = direction
+    def pulse(self):
+        GPIO.output(self.PUL, 1)
+        time.sleep(self.pulse_time)
+        GPIO.output(self.PUL, 0)
+        time.sleep(self.pulse_time)
     def pulse_steps(self, n_steps, direction='l', disengage=True):
+        assert n_steps > 0
         if direction in ['r', 'R', 'right']:
             direction = 0
         elif direction in ['l', 'L', 'left']:
             direction = 1
-        if n_steps < 0:
-            direction = 0
-            n_steps = -n_steps
-        GPIO.output(self.DIR, direction)
+        self.set_dir(direction)
         for _ in range(n_steps):
-            GPIO.output(self.PUL, 1)
-            time.sleep(self.pulse_time)
-            GPIO.output(self.PUL, 0)
-            time.sleep(self.pulse_time)
+            self.pulse()
+
         # accum steps
         pm = -1 if direction == 1 else +1
         curr_pos = (self.read_pos() + pm * n_steps) % self.PPR
@@ -84,9 +92,10 @@ if __name__ == '__main__':
     parser.add_argument('-l', help='Move left L steps')
     parser.add_argument('-r', help='Move right R steps')
     parser.add_argument('-g', help='Go to step position G')
-    parser.add_argument('-n', help='Go to filter number N')
+    parser.add_argument('-f', help='Go to filter number f')
     parser.add_argument('-w', help='Where', action='store_true')
     parser.add_argument('-t', help='Pulse Time', default='0.0005')
+    parser.add_argument('-l', help='Loop through filters L times', default='1')
     args = parser.parse_args()
     try:
         stepper = Stepper(config_file='spinspin_config.json', pulse_time=float(args.t))
@@ -106,6 +115,12 @@ if __name__ == '__main__':
                 raise Exception('left or right or goto? make up your mind yo!')
         elif args.g:
             stepper.goto(int(args.g))
+        elif args.f:
+            stepper.goto_filter(int(args.f))
+        elif args.l:
+            for _ in range(int(args.l)):
+                for f in stepper.config['filters']:
+                    stepper.goto_filter(f)
         else:
             stepper.engage()
             for _ in range(20):
