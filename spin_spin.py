@@ -20,7 +20,7 @@ class Stepper:
         self.pins = self.config['pins']
         self.PPR = self.config['PPR']
         self.PUL, self.DIR, self.ENA = self.pins
-    def pulse_steps(self, n_steps, direction='l'):
+    def pulse_steps(self, n_steps, direction='l', disengage=True):
         if direction in ['r', 'R', 'right']:
             direction = 0
         elif direction in ['l', 'L', 'left']:
@@ -39,7 +39,8 @@ class Stepper:
         pm = -1 if direction == 1 else +1
         curr_pos = (self.read_pos() + pm * n_steps) % self.PPR
         self.set_pos(curr_pos)
-        self.disengage()
+        if disengage:
+            self.disengage()
     def zero_pos(self):
         with open('./stepper_pos', 'w') as f:
             f.write(str(0.))
@@ -74,7 +75,7 @@ class Stepper:
         direction = 'r' if x > 0 else 'l'
         self.pulse_steps(steps, direction=direction)
     def disengage(self):
-        time.sleep(.2)
+        time.sleep(1)
         GPIO.output(self.ENA, 0)
 
 if __name__ == '__main__':
@@ -106,8 +107,8 @@ if __name__ == '__main__':
             stepper.goto(int(args.g))
         else:
             for _ in range(20):
-                stepper.pulse_steps(200, 'l')
-                stepper.pulse_steps(200, 'r')
+                stepper.pulse_steps(200, 'l', disengage=False)
+                stepper.pulse_steps(200, 'r', disengage=False)
     except Exception as e:
         print(e)
         stepper.disengage()
