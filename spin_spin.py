@@ -14,6 +14,12 @@ class Stepper:
             GPIO.output(pin, 0)
         self.sum_steps = 0
         self.curr_dir = 0
+    def __enter__(self):
+        self.engage()
+        return self
+    def __exit__(self, type, value, tb):
+        time.sleep(.5)
+        self.disengage()
     def load_config(self, cf):
         self.config_file = cf
         with open(cf, 'r') as f:
@@ -22,9 +28,6 @@ class Stepper:
         self.PPR = self.config['PPR']
         self.PUL, self.DIR, self.ENA = self.pins
     def set_dir(self, direction):
-        if not self.curr_dir == direction:
-            self.pulse()
-            self.pulse()
         GPIO.output(self.DIR, direction)
         self.curr_dir = direction
     def pulse(self):
@@ -62,7 +65,8 @@ class Stepper:
     def goto(self, x):
         dx = (x - self.read_pos()) % self.PPR
         if dx > self.PPR/2:
-            dx -= self.PPR
+            pass
+            #dx -= self.PPR
         dir_ = 'l' if dx < 0 else 'r'
         self.pulse_steps(int(abs(dx)), dir_) 
     def goto_filter(self, f):
