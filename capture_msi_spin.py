@@ -30,10 +30,11 @@ def capture_ms_img(cam, rb, stepper, exposures=None, n_leds=8, pause=0):
     H, W, n_channels = cam.img_shape
     ms_img = np.zeros((H, W, n_channels*n_leds), dtype=np.uint8)
     cam.set_auto_wb(False)
+    state = np.zeros(8)
+    state[4] = 1    
+    rb.set_state(state)
+    stepper.engage()
     for n in range(n_leds):
-        state = np.zeros(8)
-        state[4] = 1    
-        rb.set_state(state)
         stepper.goto_filter(n)
         if exposures is not None:
             try:
@@ -45,6 +46,7 @@ def capture_ms_img(cam, rb, stepper, exposures=None, n_leds=8, pause=0):
             img = cam.capture_img()
         print(img.mean())
         ms_img[:, :, n*n_channels:(n+1)*n_channels] = img
+    stepper.disengage()
     rb.set_state(np.zeros(8))
     return ms_img
 
