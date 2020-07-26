@@ -28,7 +28,6 @@ class Stepper:
         if n_steps < 0:
             direction = 0
             n_steps = -n_steps
-        GPIO.output(self.ENA, 1)
         GPIO.output(self.DIR, direction)
         for _ in range(n_steps):
             GPIO.output(self.PUL, 1)
@@ -74,8 +73,10 @@ class Stepper:
         steps = abs(int(x/1.25))
         direction = 'r' if x > 0 else 'l'
         self.pulse_steps(steps, direction=direction)
-    def disengage(self):
-        time.sleep(1)
+    def engage(self):
+        GPIO.output(self.ENA, 1)
+    def disengage(self, wait=0):
+        time.sleep(wait)
         GPIO.output(self.ENA, 0)
 
 if __name__ == '__main__':
@@ -106,9 +107,10 @@ if __name__ == '__main__':
         elif args.g:
             stepper.goto(int(args.g))
         else:
+            stepper.engage()
             for _ in range(20):
-                stepper.pulse_steps(200, 'l', disengage=True)
-                stepper.pulse_steps(200, 'r', disengage=True)
+                stepper.pulse_steps(200, 'l', disengage=False)
+                stepper.pulse_steps(200, 'r', disengage=False)
     except Exception as e:
         print(e)
         stepper.disengage()
