@@ -105,8 +105,9 @@ if __name__ == '__main__':
         elif args.g:
             stepper.goto(int(args.g))
         else:
-            for c in stepper.config['filters']:
-                stepper.goto_filter(c)
+            for _ in range(20):
+                stepper.pulse_steps(200, 'l')
+                stepper.pulse_steps(200, 'r')
     except Exception as e:
         print(e)
         stepper.disengage()
