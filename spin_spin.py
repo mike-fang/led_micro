@@ -99,7 +99,7 @@ if __name__ == '__main__':
     parser.add_argument('-f', help='Go to filter number f')
     parser.add_argument('-w', help='Where', action='store_true')
     parser.add_argument('-t', help='Pulse Time', default='0.0005')
-    parser.add_argument('-l', help='Loop through filters L times', default='1')
+    parser.add_argument('--loop', help='Loop through filters L times', default='1')
     args = parser.parse_args()
     try:
         stepper = Stepper(config_file='spinspin_config.json', pulse_time=float(args.t))
