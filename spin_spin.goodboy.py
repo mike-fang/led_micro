@@ -4,7 +4,7 @@ import argparse
 import json
 
 class Stepper:
-    def __init__(self, config_file, pulse_time=0.005):
+    def __init__(self, config_file, pulse_time=0.0001):
         self.load_config(config_file)
         GPIO.cleanup()
         self.pulse_time=pulse_time
@@ -17,10 +17,11 @@ class Stepper:
     def __enter__(self):
         self.engage()
         return self
+    
     def __exit__(self, type, value, tb):
         time.sleep(.5)
         self.disengage()
-        print(self.read_pos())
+        
     def load_config(self, cf):
         self.config_file = cf
         with open(cf, 'r') as f:
@@ -32,19 +33,24 @@ class Stepper:
         GPIO.output(self.DIR, direction)
         self.curr_dir = direction
     def pulse(self):
-        GPIO.output(self.PUL, 0)
-        time.sleep(self.pulse_time)
         GPIO.output(self.PUL, 1)
         time.sleep(self.pulse_time)
-    def pulse_steps(self, n_steps, direction='l', disengage=False):
-        assert n_steps >= 0
+        GPIO.output(self.PUL, 0)
+        time.sleep(self.pulse_time)
+    def pulse_steps(self, n_steps, direction='l', disengage=True):
+        assert n_steps > 0
         if direction in ['r', 'R', 'right']:
             direction = 0
         elif direction in ['l', 'L', 'left']:
             direction = 1
         self.set_dir(direction)
         for _ in range(n_steps):
-            #self.engage()
+            GPIO.output(self.DIR, direction)
+            GPIO.output(self.ENA, 1)
+            GPIO.output(self.PUL, 1)
+            time.sleep(self.pulse_time)
+            GPIO.output(self.PUL, 0)
+            time.sleep(self.pulse_time)
             self.pulse()
 
         # accum steps
@@ -67,7 +73,8 @@ class Stepper:
     def goto(self, x):
         dx = (x - self.read_pos()) % self.PPR
         if dx > self.PPR/2:
-            dx -= self.PPR
+            pass
+            #dx -= self.PPR
         dir_ = 'l' if dx < 0 else 'r'
         self.pulse_steps(int(abs(dx)), dir_) 
     def goto_filter(self, f):
@@ -99,10 +106,11 @@ if __name__ == '__main__':
     parser.add_argument('-g', help='Go to step position G')
     parser.add_argument('-f', help='Go to filter number f')
     parser.add_argument('-w', help='Where', action='store_true')
-    parser.add_argument('-t', help='Pulse Time', default='0.0005')
-    parser.add_argument('--loop', help='Loop through filters L times')
+    parser.add_argument('-t', help='Pulse Time', default='0.0001')
+    parser.add_argument('--loop', help='Loop through filters L times', default='1')
     args = parser.parse_args()
-    with Stepper(config_file='spinspin_config.json', pulse_time=float(args.t)) as stepper:
+    try:
+        stepper = Stepper(config_file='spinspin_config.json', pulse_time=float(args.t))
         if args.w:
             print(f'Welcome to {stepper.read_pos()}, please take a seat and have some covfefe')
         if args.l:
@@ -124,11 +132,16 @@ if __name__ == '__main__':
         elif args.loop:
             for _ in range(int(args.loop)):
                 stepper.goto_filter(0)
-                stepper.goto_filter(1)
-                stepper.goto_filter(2)
-                stepper.goto_filter(3)
+#                 stepper.goto_filter(1)
+#                 stepper.goto_filter(2)
+#                 stepper.goto_filter(3)
         else:
-            for _ in range(100):
-                stepper.pulse_steps(10, 'l')
-                stepper.pulse_steps(10, 'r')
-                time.sleep(.001)
+            stepper.engage()
+            for _ in range(20):
+                stepper.pulse_steps(200, 'l', disengage=False)
+                stepper.pulse_steps(200, 'r', disengage=False)
+    except Exception as e:
+        print(e)
+        stepper.disengage()
+    else:
+        stepper.disengage()
