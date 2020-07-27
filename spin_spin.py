@@ -121,10 +121,12 @@ if __name__ == '__main__':
             stepper.goto(int(args.g))
         elif args.f:
             stepper.goto_filter(int(args.f))
-        elif args.l:
-            for _ in range(int(args.l)):
-                for f in stepper.config['filters']:
-                    stepper.goto_filter(f)
+        elif args.loop:
+            for _ in range(int(args.loop)):
+                stepper.goto_filter(0)
+                stepper.goto_filter(1)
+                stepper.goto_filter(2)
+                stepper.goto_filter(3)
         else:
             stepper.engage()
             for _ in range(20):
