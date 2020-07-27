@@ -89,8 +89,9 @@ if __name__ == '__main__':
     rb = init_rb()
     #exposures = get_exposures(cam, rb, n_leds=5, pause=.5, target=75,tol=5)
     #np.save('./exposures.npy', exposures)
+    exposures = 200
     stepper = Stepper(config_file='spinspin_config.json', pulse_time=0.0005)
-    ms_img = capture_ms_img(cam, rb, stepper, n_leds=4, exposures=None, pause=.5)
+    ms_img = capture_ms_img(cam, rb, stepper, n_leds=4, exposures=exposures, pause=.5)
     for n in range(4):
         plt.figure(figsize=(10, 6))
         plt.imshow(ms_img[:, :, n*3:(n+1)*3])

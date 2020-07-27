@@ -75,7 +75,7 @@ if __name__ == '__main__':
         raise Exception('Controller needs to be "relay", "stepper" or "spinspin", yo!')
     capt = args.ctrl
     #exposures = np.load('./exposures.npy')
-    exposures = None
+    exposures = 150
     print('Starting time-lapse capture...')
     print(f'  Time between capture {dt / 60:.2f} mins')
     print(f'  Total time of cpature {tmax / 60:.2f} mins')

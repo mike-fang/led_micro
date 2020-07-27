@@ -128,7 +128,6 @@ if __name__ == '__main__':
                 stepper.goto_filter(2)
                 stepper.goto_filter(3)
         else:
-            for _ in range(100):
-                stepper.pulse_steps(10, 'l')
-                stepper.pulse_steps(10, 'r')
-                time.sleep(.001)
+            stepper.pulse_steps(10, 'l')
+            stepper.pulse_steps(10, 'r')
+            time.sleep(.001)
