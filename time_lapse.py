@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from datetime import datetime
 from capture_msi import init_rb
+from temp_hum import get_th
 from capture_msi import capture_ms_img as relay_capture
 from capture_msi_stepper import capture_ms_img as stepper_capture
 from capture_msi_spin import capture_ms_img as spin_capture
@@ -24,6 +25,9 @@ def start_time_lapse(dt, tmax, out_path, capt='stepper', exposures=None, save_th
         stepper = Stepper(pulse_time=0.00050)
     if capt == 'spinspin':
         stepper = SpinSpin(config_file='spinspin_config.json', pulse_time=0.0005)
+
+    with open(os.path.join(out_path, 'temp_hum.txt'), 'w') as f:
+        f.write('time \t temp \t hum\n')
     while time.time() - t0 < tmax:
         start_time = time.time()
         if capt == 'stepper':
@@ -37,6 +41,7 @@ def start_time_lapse(dt, tmax, out_path, capt='stepper', exposures=None, save_th
             ms_img = relay_capture(cam, rb, n_leds=8, exposures=exposures)
         time_stamp = f'{time.time():.2f}'.replace('.', '_')
         np.save(os.path.join(out_path, f'{time_stamp}.npy'), ms_img)
+
         if save_thumbnail:
             plt.figure()
             show_rgb_comp(ms_img, n_leds=n_leds)
@@ -45,6 +50,10 @@ def start_time_lapse(dt, tmax, out_path, capt='stepper', exposures=None, save_th
             plt.cla()
             plt.clf()
             plt.close()
+        temp, hum = get_th()
+        print(f'Temperature: {temp}, Humidity: {hum}')
+        with open(os.path.join(out_path, 'temp_hum.txt'), 'a') as f:
+            f.write(f'{time_stamp} \t {temp} \t {hum}\n')
         end_time = time.time()
         time_elapsed = end_time - start_time
         sleep_time = dt - time_elapsed
