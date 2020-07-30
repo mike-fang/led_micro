@@ -95,5 +95,4 @@ celerybeat-schedule
 # mypy
 .mypy_cache/
 
-/results
-/analyses
+/results/

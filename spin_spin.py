@@ -1,7 +1,22 @@
-import RPi.GPIO as GPIO
+#import RPi.GPIO as GPIO
 import time
 import argparse
 import json
+
+class MockGPIO:
+    BOARD = None
+    OUT = None
+    def __init__(self):
+        pass
+    def cleanup(self):
+        pass
+    def setmode(self, x):
+        pass
+    def setup(self, x, y):
+        pass
+    def output(self, pin, v):
+        print(f'pin: {pin}, value: {v}')
+GPIO = MockGPIO()
 
 class Stepper:
     def __init__(self, config_file, pulse_time=0.005):
@@ -35,16 +50,16 @@ class Stepper:
         time.sleep(self.pulse_time)
         GPIO.output(self.PUL, 0)
         time.sleep(self.pulse_time)
-    def pulse_steps(self, n_steps, direction='l', disengage=True):
+    def pulse_steps(self, n_steps, direction='l', disengage=False):
         assert n_steps > 0
         if direction in ['r', 'R', 'right']:
             direction = 0
         elif direction in ['l', 'L', 'left']:
             direction = 1
         self.set_dir(direction)
+        self.engage()
         for _ in range(n_steps):
             self.pulse()
-
         # accum steps
         pm = -1 if direction == 1 else +1
         curr_pos = (self.read_pos() + pm * n_steps) % self.PPR
@@ -122,6 +137,7 @@ if __name__ == '__main__':
         elif args.f:
             stepper.goto_filter(int(args.f))
         elif args.loop:
+            print('hihi')
             for _ in range(int(args.loop)):
                 stepper.goto_filter(0)
                 stepper.goto_filter(1)
