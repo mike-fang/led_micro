@@ -2,11 +2,13 @@ import cv2
 import numpy as np
 from datetime import datetime
 import h5py
+from asi_controller import AsiController
 import os, time
 from elp_usb_cam import ELP_Camera
 import matplotlib.pylab as plt
 from msi_proc import *
 import argparse
+from autofocus import AutoFocus
 
 TEST = False
 if not TEST:
@@ -18,7 +20,7 @@ if not TEST:
     from spin_spin import Stepper as SpinSpin
 
 class TimeLapse:
-    def __init__(self, dt, tmax, out_path, ctrl='spinspin', exposures=None, save_tn=True):
+    def __init__(self, dt, tmax, out_path, ctrl='spinspin', exposures=None, save_tn=True, autofocus=False):
         self.dt = dt
         self.tmax = tmax
         self.ctrl = ctrl
@@ -28,6 +30,10 @@ class TimeLapse:
         self.init_ctrl()
         self.n_frames = int(np.ceil(tmax/dt))
         self.frame_n = 0
+        if autofocus:
+            self.af = AutoFocus(self.cam, self.rb, self.control, rng=5, steps=10)
+        else:
+            self.af = None
     def get_th(self):
         if self.ctrl == 'test':
             return np.random.random(size=2)
@@ -57,6 +63,16 @@ class TimeLapse:
             self.n_leds = 8
             ms_img = np.random.randint(0, 255, size=(640, 480, 3 * self.n_leds))
         return ms_img
+    def white_light(self, on=True):
+        if on:
+            if self.ctrl == 'spinspin':
+                state = np.zeros(8)
+                state[4] = 1    
+                self.rb.set_state(state)
+                self.stepper.goto_filter('none')
+                self.stepper.disengage()
+        else:
+            self.rb.set_state(np.zeros(8))
     def init_ctrl(self):
         if self.ctrl == 'test':
             cam = None
@@ -64,17 +80,16 @@ class TimeLapse:
             stepper = None
         else:
             print('Init. Cam..')
-            cam = ELP_Camera(0)
+            self.cam = ELP_Camera(0)
             print('Init. Relay..')
-            rb = init_rb()
+            self.rb = init_rb()
             print('Init. Stepper..')
             if self.ctrl == 'stepper':
-                stepper = Stepper(pulse_time=0.00050)
+                self.stepper = Stepper(pulse_time=0.00050)
             elif self.ctrl == 'spinspin':
-                stepper = SpinSpin(config_file='spinspin_config.json', pulse_time=0.0005)
-        self.cam = cam
-        self.rb = rb
-        self.stepper = stepper
+                self.stepper = SpinSpin(config_file='spinspin_config.json', pulse_time=0.0005)
+            print('Init. Control...')
+            self.control = AsiController(config_file='./asi_config.yml', init_xy=False)
     def write_h5(self, msi, ts, init=False):
         print(self.n_frames)
         H, W, C = msi.shape
@@ -114,6 +129,10 @@ class TimeLapse:
         init = True
         while time.time() - t0 < tmax:
             start_time = time.time()
+            print('Autofocusing')
+            if self.af is not None:
+                self.white_light(True)
+                self.af.step()
             print('getting_msi')
             ms_img = self.get_msi()
             print('Writing h5')
@@ -141,6 +160,7 @@ if __name__ == '__main__':
     parser.add_argument('--tmax', help='Duration of time-lapse in minutes')
     parser.add_argument('--ctrl', help='Controller ("relay", "stepper", or "spinspin")')
     parser.add_argument('--exp', help='Exposure', default='2000')
+    parser.add_argument('--af', help='Autofocus', action='store_true')
 
     args = parser.parse_args()
 
@@ -159,6 +179,6 @@ if __name__ == '__main__':
     print(f'  Output saved to {out_path}')
     print(f'  Using {ctrl} to control LEDs')
     print(f'  Exposure set at {exposures:.2f}')
-    tl = TimeLapse(dt, tmax, out_path, ctrl=ctrl, exposures=exposures, save_tn=True)
+    tl = TimeLapse(dt, tmax, out_path, ctrl=ctrl, exposures=exposures, save_tn=True, autofocus=args.af)
     tl.start()
     #start_time_lapse(dt, tmax, out_path, capt=capt, exposures=exposures, save_thumbnail=True)

@@ -14,17 +14,18 @@ def get_sharpness(img):
     sharpness = np.average(gnorm)
     return sharpness
 
-
-
 class AutoFocus:
-    def __init__(self, cam, rb, control, rng=10, steps=20):
+    def __init__(self, cam, rb, control, rng=10, steps=20, maxrng=100):
         self.cam = cam
         self.rb = rb
         self.stage = control
         self.rng = rng
         self.steps = steps
+        self.maxrng = maxrng
     def scan(self, z0, rng, steps):
-        z_scan = np.linspace(z0-rng, z0+rng, steps)
+        z_low = max(z0-rng, self.z_low)
+        z_high = min(z0+rng, self.z_high)
+        z_scan = np.linspace(z_low, z_high, steps)
         sharp_scan = np.zeros_like(z_scan)
         for n, z in enumerate(z_scan):
             self.stage.goto_z(z)
@@ -38,13 +39,15 @@ class AutoFocus:
     def step(self, iter=2):
         # turn on white led
         state = np.zeros(8)
-        state[7] = 1
+        state[4] = 1
         self.rb.set_state(state)
         
         rng = self.rng
         steps = self.steps
+        z0 = self.stage.where_z()
+        self.z_low = z0 - self.maxrng
+        self.z_high = z0 + self.maxrng
         for i in range(iter):
-            z0 = self.stage.where_z()
             print(f'Searching in range {z0-rng, z0+rng}')
             Z, S = self.scan(z0, rng, steps)
             z0 = Z[S.argmax()]
