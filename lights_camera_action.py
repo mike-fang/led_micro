@@ -10,7 +10,7 @@ def print_sharp(img):
 cam = ELP_Camera(0)
 cam.set_auto_exp(False)
 cam.set_auto_wb(False)
-cam.set_exp(150)
+cam.set_exp(2000)
 cam.set_wb(2000)
 cam.get("White Balance Temperature")
 rb = init_rb()

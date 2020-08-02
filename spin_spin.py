@@ -1,4 +1,4 @@
-#import RPi.GPIO as GPIO
+import RPi.GPIO as GPIO
 import time
 import argparse
 import json
@@ -16,7 +16,7 @@ class MockGPIO:
         pass
     def output(self, pin, v):
         print(f'pin: {pin}, value: {v}')
-GPIO = MockGPIO()
+#GPIO = MockGPIO()
 
 class Stepper:
     def __init__(self, config_file, pulse_time=0.005):

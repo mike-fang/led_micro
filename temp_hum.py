@@ -8,5 +8,4 @@ def get_th():
     temp, hum = out.split()
     temp = temp.split('C')[0]
     hum = hum.split('%')[0]
-    return temp, hum
-
+    return float(temp), float(hum)
